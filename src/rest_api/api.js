@@ -301,7 +301,8 @@ G.provide('ApiClient', {
 
     function initializeForm() {
       //Setup the form properties
-      form.enctype = "multipart/form-data";
+      form.enctype = "multipart/form-data"; //All others work this way.
+      form.encoding = "multipart/form-data"; //IE 8 must be set this way
       form.method = "POST"; //httpMethodInput will drive rails to the correct rest route
       form.target = hiddenFrame.name;
       form.action = path;
@@ -331,14 +332,13 @@ G.provide('ApiClient', {
 
     function checkForFile(src) {
       var test = testImage(), fails = 0;
-      test.src = src;
+      test.src = cacheBustedSrc();
 
       //Checks for the image using a series of img elements
       function testImage() {
         var test = doc.createElement("img");
         test.onerror = function() {
           fails++;
-          var cacheBustedSrc = src + "?time=" + (new Date()).getTime();
           if (fails > 20) {
             G.log("After Polling for image 20 times we couldn't find the image");
             if (errorCb) errorCb(src);
@@ -348,18 +348,26 @@ G.provide('ApiClient', {
           }
           setTimeout(function() {
             test = testImage();
-            test.src = cacheBustedSrc;
+            test.src = cacheBustedSrc();
           }, 1000);
         };
 
         test.onload = function() {
-          if (successCb) successCb(src);
-          if (completeCb) completeCb(src);
+          var cbSrc = cacheBustedSrc();
+          if (successCb) successCb(cbSrc);
+          if (completeCb) completeCb(cbSrc);
           hiddenFrame.parentNode.removeChild(hiddenFrame); //cleanup
         };
 
         return test;
       }
+
+      //We always append a new timestamp to the end because IE 8 will
+      //cache a failure.
+      function cacheBustedSrc(){
+       return src + "?time=" + (new Date()).getTime();
+      }
+
     }
 
     return form;
