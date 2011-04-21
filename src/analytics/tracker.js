@@ -46,7 +46,7 @@ G.provide("Tracker", {
     var pre = {
       'trackevent': category,
       'action': action
-    }
+    };
     if(optLabel) pre['optlabel'] = optLabel;
     if(optValue) pre['optvalue'] = optValue;
 
@@ -84,7 +84,7 @@ G.provide("Tracker", {
       'trackpageview': tpv.path,
       'trackevent': te.category,  // we use category to define partner acct
       'action': te.action
-    }
+    };
     if(te.optLabel) pre['optlabel'] = te.optLabel;
     if(te.optValue) pre['optvalue'] = te.optValue;
 
