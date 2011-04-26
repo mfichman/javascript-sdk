@@ -22,75 +22,84 @@
  *
  */
 
+
+G.provide("", {
+  track: function() {
+    G.Tracker.track.apply(G.Tracker, arguments);
+  }
+});
+
+
 G.provide("Tracker", {
 
-  iframe: null,
   endpoint: "https://analytics.groupit.com",
-  accountToken: null,                       // TODO support accountToken
 
+  /**
+   * General tracking mechanism for our analytics. Spins up a self destructive
+   * iframe that then sends a request to watson for tracking.
+   *
+   * Allows multiplexing of event tracking and pageview tracking. In addition to
+   * requesting either tracking mechanism you can also do both at the same time
+   * if needed. Just pass the keys as specified below
+   *
+   * @param {Object} options See below
+   *
+   * options = {
+   *  event: {
+   *    category: undefined,
+   *    action: undefined,
+   *    optLabel: undefined, //optional
+   *    optValue: undefined  //optional
+   *  },
+   *  pageview = {
+   *    path: undefined
+   *  }
+   * }
+   *
+   */
 
-  // -------------------------------------------- INIT
-  init: function() {
-    G.Tracker.iframe = G.ApiClient.createHiddenIframe();
-  },
+  track: function(options) {
 
+    var trackParams = {},
+      iframe = G.ApiClient.createHiddenIframe();
 
-  // -------------------------------------------- TRACK EVENT
-  trackEvent: function (category, action, optLabel, optValue) {
-    if (!category || !action) {
-      G.log("trackEvent requires category and action arguments");
-      return;
+    //Populate the trackParams
+    if (options.event) trackEvent(options.event, trackParams);
+    if (options.pageview) trackPageView(options.pageview, trackParams);
+
+    //Encode and send
+    var qs = G.QS.encode(trackParams);
+    iframe.src = G.Tracker.endpoint + "?" + qs;
+
+    //Cleanup
+    setTimeout(function() {
+      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+    }, 30000); //30 seconds from now (max heroku timeout length) remove iframe
+
+    //Support functions
+    function trackEvent(options, trackParams) {
+      if (!options.category || !options.action) {
+        G.log("trackEvent requires category and action arguments");
+        return;
+      }
+
+      //Required for eventTracking
+      trackParams.category = options.category;
+      trackParams.action = options.action;
+
+      if (options.optLabel) trackParams.optLabel = options.optLabel;
+      if (options.optValue) trackParams.optValue = options.optValue;
     }
 
-    // preconstruct
-    var pre = {
-      'trackevent': category,
-      'action': action
-    };
-    if(optLabel) pre['optlabel'] = optLabel;
-    if(optValue) pre['optvalue'] = optValue;
+    function trackPageView(options, trackParams) {
+      if (!options.path) {
+        G.log('trackPageview requires a path argument');
+        return;
+      }
 
-    var qs = G.QS.encode(pre);
-    G.Tracker.iframe.src = G.Tracker.endpoint + "?" + qs;
-  },
-
-
-  // -------------------------------------------- TRACK PAGE VIEW
-  trackPageview: function (path) {
-    if(!path) {
-      G.log('trackPageview requires a path argument');
-      return;
+      //Required for pageview tracking
+      trackParams.path = options.path
     }
-    var qs = G.QS.encode({
-      'trackpageview': path
-    });
-    G.Tracker.iframe.src = G.Tracker.endpoint + "?" + qs;
-
-  },
-
-
-  // -------------------------------------------- DOUBLE TRACK
-  doubleTrack: function (obj) {
-    if(!obj && !obj.trackPageview && !obj.trackEvent) {
-      G.log('doubleTrack requires a complete object argument');
-      return;
-    }
-
-    te = obj.trackEvent;
-    tpv = obj.trackPageview;
-
-    // preconstruct here
-    var pre = {
-      'trackpageview': tpv.path,
-      'trackevent': te.category,  // we use category to define partner acct
-      'action': te.action
-    };
-    if(te.optLabel) pre['optlabel'] = te.optLabel;
-    if(te.optValue) pre['optvalue'] = te.optValue;
-
-    var qs = G.QS.encode(pre);
-    G.Tracker.iframe.src = G.Tracker.endpoint + "?" + qs;
   }
-
 });
 
