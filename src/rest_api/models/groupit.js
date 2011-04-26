@@ -39,7 +39,7 @@ G.provide("models.groupit", {
     "message", "surprise", "quantity","user_id","recipient", "options",
     "active", "lead_uri", "support_uri", "purchase_date", "groupit_type",
     "created_at", "updated_at", "hash_digest", "organizer", "amount_raised",
-    "end_date", "redeem_date", "hide_participants", "is_valid"],
+    "end_date", "redeem_date", "hide_participants", "is_valid", "lead_image"],
 
 
   index: function(config) {
@@ -112,6 +112,7 @@ G.provide("models.groupit", {
 
 
   Base: function() {
+    var self = this;
     /**
      * Returns a form for image uploads. Only works if the record already exists
      *
@@ -132,7 +133,7 @@ G.provide("models.groupit", {
      * submit verbage that is needed.
      *
      */
-    this.uploadImageForm = function(params) {
+    self.uploadImageForm = function(params) {
       params = params || {};
       params.httpMethod = "PUT";
       params.modelClassName = "groupit";
@@ -140,6 +141,87 @@ G.provide("models.groupit", {
       params.path = G.endPoint + "/groupits/" + params.modelId; //Update path
 
       return G.ApiClient.uploadImageForm(params);
+    };
+
+
+    /**
+     * Notes that will be created during the next create/update calls
+     *
+     *
+     * @param noteName Key to get the data back for the groupit
+     * @param noteText Value for the note
+     * @param userId Optional userId
+     */
+    var notes = [];
+    self.addNote = function(noteName, noteText, userId) {
+      notes.push({
+        note: noteText,
+        name: noteName,
+        userId: userId,
+        metadataType: 'Groupit'
+      });
+    };
+
+    var oldCreate = self.create; //TODO has to be a better way to do this
+    self.create = function(config) {
+      config = config || {};
+      //Rewire success to first create notes and then after that finishes return
+      var oldSuccess = config.success;
+      config.success = function() {
+        var args = arguments;
+        createNotes(function() {
+          if (oldSuccess) oldSuccess.apply(self, args);
+        });
+      };
+
+      //Try creating like instructed
+      oldCreate(config);
+    };
+
+
+    var oldUpdate = self.update;
+    self.update = function(config) {
+      config = config || {};
+      //Rewire success to first create notes and then after that finishes return
+      var oldSuccess = config.success;
+      config.success = function() {
+        var args = arguments;
+        createNotes(function() {
+          if (oldSuccess) oldSuccess.apply(self, args);
+        });
+      };
+
+      //Try creating like instructed
+      oldUpdate(config);
+    };
+
+
+    //Creates the notes that were added and clears out the array as needed
+    //We assume that the groupit has been created and exists at this point.
+    //Relies on the fact that self.id() returns a valid id.
+    function createNotes(callback) {
+      if(notes.length == 0) callback(); //No notes then just return normally
+      var finished = 0;
+      for (var i in notes) {
+        var noteData = notes[i],
+          note = G.newNote();
+        note.metadataId(self.id());
+        note.metadataType('Groupit');
+        note.userId(noteData.userId);
+        note.name(noteData.name);
+        note.note(noteData.note);
+
+        note.create({
+          complete: function() {
+            finished++;
+            if (finished == notes.length) {
+              callback(); //Let us know when all the calls finished
+              //reset the note array
+              notes = [];
+            }
+          }
+        });
+      }
     }
 
 
