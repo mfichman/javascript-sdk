@@ -48,7 +48,7 @@ var G = G || {
     G.endPoint = endPoint;
     //Generate a unique random key for this specific instance of the JDK
     G.instanceId = (new Date().getTime()).toString() +
-            Math.floor(Math.random() * 1000001).toString();
+      Math.floor(Math.random() * 1000001).toString();
   },
 
   /**
@@ -62,10 +62,10 @@ var G = G || {
    */
   provide: function(target, source, overwrite) {
     return this.copy(
-            typeof target == 'string' ? this.create(target) : target,
-            source,
-            overwrite
-            );
+      typeof target == 'string' ? this.create(target) : target,
+      source,
+      overwrite
+      );
   }
   ,
   /**
@@ -77,8 +77,8 @@ var G = G || {
    */
   create: function(name, value) {
     var node = G,
-            nameParts = name ? name.split('.') : [],
-            len = nameParts.length;
+      nameParts = name ? name.split('.') : [],
+      len = nameParts.length;
     for (var i = 0; i < len; i++) {
       var part = nameParts[i];
       var nso = node[part]; //nso = namespaced object

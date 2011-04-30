@@ -44,7 +44,7 @@ G.provide("Window", {
    *   IE 8, FF, Chrome compat - April 2011
    */
 
-  innerHeight: function(_window) {
+    innerHeight: function(_window) {
     _window = _window || window;
     return _window.innerHeight || (_window.document.documentElement && _window.document.documentElement.clientHeight);
   },
