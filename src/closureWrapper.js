@@ -49,5 +49,4 @@
 
   //INSERT_JAVASCRIPT_CODE_HERE
 
-
 })(window);
