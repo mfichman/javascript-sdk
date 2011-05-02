@@ -132,7 +132,11 @@ G.provide("DataObject", {
         var models = [];
         for (var i in json) {
           //TODO need to do a proper strip namespace
-          models.push(constructorFn(json[i][name]));
+          //models.push(constructorFn(json[i][name]));
+          //XXX HACK WARNING -- should use capName
+          if (i == 0) {
+          models.push(G.ActivePrototype.newModel("Groupit", json[i][name]));
+          }
         }
         callback(models);
         if (config.success) config.success(models, xhr);
@@ -176,6 +180,7 @@ G.provide("DataObject", {
          *
          * @param config
          */
+
         G[capName] = G[capName] || {};
         G[capName].index = function(config) {
           config = config || {};
@@ -193,6 +198,7 @@ G.provide("DataObject", {
               for (var i in json) {
                 //TODO need to do a proper strip namespace
                 models.push(G[constructorName](json[i][name]));
+             //   models.push(G.ActivePrototype.newModel(capName, json[i][name]));
               }
               if (config.success) config.success(models, xhr);
             } else {

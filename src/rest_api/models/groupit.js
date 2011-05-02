@@ -39,7 +39,8 @@ G.provide("models.groupit", {
     "message", "surprise", "quantity","user_id","recipient", "options",
     "active", "lead_uri", "support_uri", "purchase_date", "groupit_type",
     "created_at", "updated_at", "hash_digest", "organizer", "amount_raised",
-    "end_date", "redeem_date", "hide_participants", "is_valid", "lead_image"],
+    "end_date", "redeem_date", "hide_participants", "is_valid", "lead_image",
+    "participants", "app", "user", "contributions", "organizer_uri"],
 
 
   index: function(config) {
@@ -52,48 +53,6 @@ G.provide("models.groupit", {
       params, wrapIncludes);
 
     function wrapIncludes(models) {
-      for (var i in models) {
-        var j;
-        var model = models[i];
-
-        //TODO need to add all these to the keys of a groupit... handle not doing the lookups too..
-        //Wrap the user
-        if (model.user) {
-          model.user(G.newUser(model.user()));
-        }
-
-        //Wrap the App
-        if (model.app) {
-          model.app(G.newApp(model.app()));
-        }
-
-
-        //Wrap the participants
-        if (model.participants) {
-          var parts = [];
-          for (j in model.participants()) {
-            var participant = model.participants()[j];
-            //TODO need to get the participant wired with the user
-            participant.user = G.newUser(participant.user);
-            //TODO FML need those collection attributes
-            parts.push(G.newParticipant(participant));
-          }
-          model.participants(parts);
-        }
-
-        //Wrap the contributions
-        if (model.contributions) {
-          var contrs = [];
-          for (j in model.contributions()) {
-            var contribution = model.contributions()[j];
-            //TODO holy crap clean this
-            var user = commonUser(contribution.user_id, model.participants());
-            contribution.user = user;
-            contrs.push(G.newContribution(model.contributions()[j]));
-          }
-          model.contributions(contrs);
-        }
-      }
     }
 
     //The participants must have a user for the contribution as a contributor => participant

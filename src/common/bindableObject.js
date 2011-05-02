@@ -137,30 +137,62 @@ G.provide("BindableObject", {
       }
     };
 
-    this.generateGetterSetter = function (name) {
-      self[this.nameConversion(name)] = function() {
-        var args = Array.prototype.slice.call(arguments);
-        if (args.length == 0) {
-          return self._data[name];
-        } else {
-          var value = args.shift(),
-            deep = args.shift();
-          return set(name, value, deep);
-        }
-      };
+    function isCollectionName(name) {
+      return name[name.length-1] == 's';
     };
 
-    function fireOnKey(key) {
+    /** 
+     * Generates a getter and a setter for attribute with the given name.  If
+     * the name ends with 's', it is considered a collection, and the getter
+     * and setter will both have an additional "index" param as the first
+     * argument.
+     */
+    this.generateGetterSetter = function (name) {
+      if (isCollectionName(name)) {
+        // Collection case
+        self[this.nameConversion(name)] = function() {
+          var args = Array.prototype.slice.call(arguments);
+          if (args.length == 1) {
+            var index = args.shift();
+            return self._data[name] ? self._data[name][index] : null;
+          } else {
+            var index = args.shift();
+            var value = args.shift();
+            var deep = args.shift();
+            return collectionSet(index, name, value, deep);
+          }
+        };
+      } else {
+        // Singleton case
+        self[this.nameConversion(name)] = function() {
+          var args = Array.prototype.slice.call(arguments);
+          if (args.length == 0) {
+            return self._data[name];
+          } else {
+            var value = args.shift();
+            var deep = args.shift();
+            return set(name, value, deep);
+          }
+        };
+      }
+    };
+
+    /**
+     * Notifies all listeners that "key" has changed.  If the value is an
+     * array, "index" should be non-null so that the listener knows what 
+     * index in the collection changed.
+     */
+    function fireOnKey(key, index) {
       self._listeners[key] = self._listeners[key] || [];
       for (var i in self._listeners[key]) {
         if (self._listeners[key][i]) {
-          self._listeners[key][i](self._data[key]);
+          self._listeners[key][i](self._data[key], index);
         }
       }
     }
 
-    //Deep copy is non trivial and in some circumstances doesn't work as expected
-    //if you need a deep copy you can ask for one
+    // Deep copy is nonrivial and in some circumstances doesn't work as
+    // expected if you need a deep copy you can ask for one
     function set(key, value, deep) {
       self._listeners[key] = self._listeners[key] || [];
       //Null's type is "object"... doh
@@ -174,6 +206,24 @@ G.provide("BindableObject", {
       fireOnKey(key);
       return self._data[key];
     }
+
+    function collectionSet(index, key, value, deep) {
+      self._listeners[key] = self._listeners[key] || [];
+
+      // Make sure an array is present to avoid indexing errors.
+      self._data[key] = self._data[key] || []
+
+      if (deep && typeof value === 'object' && value != null) {
+        var empty = (value instanceof Array) ? [] : {}
+        self._data[key][index] = G.deepCopy(empty, value, true);
+      } else {
+        self._data[key][index] = value;
+      }
+
+      fireOnKey(key, index);
+      return self._data[key][index];
+    }
+    
 
   }
 
