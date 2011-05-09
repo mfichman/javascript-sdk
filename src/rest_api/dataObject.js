@@ -134,9 +134,9 @@ G.provide("DataObject", {
           //TODO need to do a proper strip namespace
           //models.push(constructorFn(json[i][name]));
           //XXX HACK WARNING -- should use capName
-          if (i == 0) {
+
+          //Wrap the object with accessors/mutators and the listener pattern.
           models.push(G.ActivePrototype.newModel("Groupit", json[i][name]));
-          }
         }
         callback(models);
         if (config.success) config.success(models, xhr);
