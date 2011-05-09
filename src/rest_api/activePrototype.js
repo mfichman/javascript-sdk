@@ -1,5 +1,20 @@
 
-
+/**
+ * This is an example of how to use the wrapper in the Groupit code right now.
+ * It relies on code in dataObject.js, the schema in dataObject.js, and also
+ * the objects under models/ as of 5/8/2011.  Ideally, some things would be 
+ * abstracted out so that the infrastructure is completely generic, and doesn't
+ * depend on Groupit-specific stuff at all.
+ */
+G.provide("ActivePrototype.Test", {
+  test: function () {
+    G.models.groupit.index({
+      success: function(data) {
+        G.log(data) // This will be a wrapped list of Groupits
+      }
+    });
+  }
+});
 
 
 G.provide("ActivePrototype", {
@@ -60,12 +75,9 @@ G.provide("ActivePrototype", {
   }
 });
 
+/*
+AP.Groupit.index({ include: ['participant', 'user'] }) {
 
-function test() {
-  var a = G.ActivePrototype.newModel("Groupit", {});
-  a.id(1);
-  a.read({ success: function() {
-    console.log(a.data());
-    var b = G.ActivePrototype.newModel("Groupit", a.data());
-  }});
 }
+*/
+
